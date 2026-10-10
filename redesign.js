@@ -3,7 +3,7 @@
 const POKEQUIZZ_GAME_CARDS={
  guess:{sprite:25,title:'¿Quién es?',desc:'Reconocé la silueta',tag:'SILUETAS'},
  quiz:{sprite:1,title:'Quiz Pokémon',desc:'Tipos y conocimiento',tag:'PREGUNTAS'},
- grid:{sprite:138,title:'Cuadrícula',desc:'Cruzá dos tipos',tag:'ESTRATEGIA'},
+ grid:{sprite:138,title:'Cuadrícula',desc:'Cruzá criterios Pokémon',tag:'ESTRATEGIA'},
  top10:{sprite:150,title:'Top 10',desc:'Completá el ranking',tag:'RANKING'},
  connections:{sprite:133,title:'Conexiones',desc:'Armá cuatro grupos',tag:'GRUPOS'},
  stats700:{sprite:149,title:'Reto 700',desc:'Creá tu campeón',tag:'ESTADÍSTICAS'},
