@@ -14,7 +14,7 @@ function dailyDistinctOrder(items,key,signature=item=>item?.id??String(item),dat
  if(signature(current[0])===signature(previous[0])){const swap=current.findIndex((item,index)=>index>0&&signature(item)!==signature(previous[0]));if(swap>0)[current[0],current[swap]]=[current[swap],current[0]];}
  return current;
 }
-const dailyStorageKey=(game,mode='')=>`poke-daily-v7:${playingDay}:${generation}:${game}:${gameDifficulty}:${mode}${game==='top10'?':simple-v1':''}`;
+const dailyStorageKey=(game,mode='')=>`poke-daily-v7:${playingDay}:${generation}:${game}:${gameDifficulty}:${mode}${game==='top10'?':simple-v1':game==='grid'?':criteria-v1':''}`;
 function readDaily(game,mode=''){try{return JSON.parse(localStorage.getItem(dailyStorageKey(game,mode)))||null;}catch{return null;}}
 function writeDaily(game,data,mode=''){try{localStorage.setItem(dailyStorageKey(game,mode),JSON.stringify(data));}catch{}}
 function dailyCaption(){return `DESAFÍO DIARIO · ${playingDay.split('-').reverse().join('/')} · CAMBIA A LAS 09:00 DE ARGENTINA`;}
@@ -31,7 +31,7 @@ function dailyTopSpec(){
 }
 function dailyTopPool(){return dailyTopSpec().pool;}
 function saveTopDaily(){writeDaily('top10',{found:topFound,deadline,finished:topFinished,started:topStarted},topMode);}
-function saveGridDaily(){writeDaily('grid',{answers:gridCells.map(c=>c.answer?.id||null)});}
+function saveGridDaily(){writeDaily('grid',{answers:gridCells.map(c=>c.answer?{id:c.answer.id,shiny:!!c.shiny}:null)});}
 function suggestionsFor(value){const key=normalizeName(value.trim());if(!key)return[];return eligible().filter(m=>normalizeName(m.name).includes(key)).sort((a,b)=>Number(normalizeName(b.name).startsWith(key))-Number(normalizeName(a.name).startsWith(key))||a.id-b.id).slice(0,6);}
 function resolvePrediction(value){const exact=findPokemon(value);return exact?.name||suggestionsFor(value)[0]?.name||value;}
 function autocomplete(inputId){
@@ -53,7 +53,7 @@ start=function(game){
  }else{
   activeRandom=infinite||game==='stats700'?Math.random:seededRandom(dailyChallengeSeed(game,playingDay));
   legacyStart(game);
-  if(game==='grid'&&!infinite){const saved=readDaily('grid');if(Array.isArray(saved?.answers))saved.answers.slice(0,9).forEach((id,i)=>{const mon=gridCells[i].candidates.find(m=>m.id===id);if(mon)gridCells[i].answer=mon;});score=gridCells.filter(c=>c.answer).length*100;renderGrid();}
+  if(game==='grid'&&!infinite){const saved=readDaily('grid');if(Array.isArray(saved?.answers))saved.answers.slice(0,gridCells.length).forEach((entry,i)=>{const id=typeof entry==='object'?entry?.id:entry,mon=gridCells[i]?.candidates.find(m=>m.id===id);if(mon){gridCells[i].answer=mon;gridCells[i].shiny=!!(typeof entry==='object'&&entry.shiny);}});score=gridCells.filter(c=>c.answer).length*100;renderGrid();}
  }
  if(infinite)$('daily-label').hidden=true;else showDaily();
 };
@@ -71,7 +71,7 @@ checkTopAnswer=function(name){if(!ensureToday())return{ok:false,message:'El desa
 const legacyFinishTop=finishTop;
 finishTop=function(message){legacyFinishTop(message);$('give-up').textContent='Volver al desafío de hoy';saveTopDaily();};
 const legacyGridAnswer=checkGridAnswer;
-checkGridAnswer=function(index,name){const infinite=typeof infiniteMode!=='undefined'&&infiniteMode;if(!infinite&&!ensureToday())return{ok:false,message:'El desafío se renovó. Elegí una casilla del nuevo día.'};const result=legacyGridAnswer(index,resolvePrediction(name));if(result.ok&&!infinite)saveGridDaily();return result;};
+checkGridAnswer=function(index,name){const infinite=typeof infiniteMode!=='undefined'&&infiniteMode;if(!infinite&&!ensureToday())return{ok:false,message:'El desafío se renovó. Elegí una casilla del nuevo día.'};const result=legacyGridAnswer(index,resolvePrediction(name));if(result.ok&&!infinite){const mon=gridCells[index]?.answer,capture=typeof window.captureDailyGridPokemon==='function'?window.captureDailyGridPokemon(mon,index):{shiny:false,newEntry:false};result.message+=capture.shiny?' ✨ ¡Apareció shiny y quedó guardado en tu Pokédex!':capture.newEntry?' ¡Nuevo registro en tu Pokédex!':' Ya estaba registrado en tu Pokédex.';saveGridDaily();}return result;};
 const legacyOpenCell=openCell;
 openCell=function(index){legacyOpenCell(index);autocomplete('pokemon-answer');};
 function connectionRules(pool,mode){
